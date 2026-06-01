@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>班級工具箱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --bg2: #181830;
+    --bg3: #1e1e3a;
+    --card: #22224a;
+    --accent: #7c6ef0;
+    --accent2: #e06aaa;
+    --accent3: #4dc9a8;
+    --accent4: #f0a33c;
+    --text: #e8e6ff;
+    --muted: #8a88b0;
+    --border: rgba(124,110,240,0.25);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(15,15,26,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0;
+    padding: 0 1.5rem;
+    height: 58px;
+  }
+  .nav-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 1.1rem;
+    color: var(--accent);
+    margin-right: 1.5rem;
+    white-space: nowrap;
+  }
+  .nav-tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab {
+    padding: 0 1.1rem;
+    height: 58px;
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer;
+    font-size: 0.88rem; font-weight: 500;
+    color: var(--muted);
+    border-bottom: 2.5px solid transparent;
+    transition: all 0.2s; white-space: nowrap;
+    user-select: none;
+  }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-tab .tab-icon { font-size: 1.1rem; }
+
+  /* SECTIONS */
+  .section { display: none; padding: 78px 1.5rem 2rem; min-height: 100vh; max-width: 960px; margin: 0 auto; }
+  .section.active { display: block; }
+
+  /* ====== 1. SCORE BOARD ====== */
+  .score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem; }
+  .score-header h2 { font-size: 1.5rem; font-weight: 700; }
+  .btn {
+    padding: 0.5rem 1.1rem; border-radius: 8px; border: none; cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif; font-weight: 500; font-size: 0.85rem;
+    transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #6c5ee0; }
+  .btn-danger { background: rgba(240,80,80,0.15); color: #f05050; border: 1px solid rgba(240,80,80,0.3); }
+  .btn-danger:hover { background: rgba(240,80,80,0.25); }
+  .btn-success { background: rgba(77,201,168,0.15); color: var(--accent3); border: 1px solid rgba(77,201,168,0.3); }
+  .btn-success:hover { background: rgba(77,201,168,0.25); }
+  .btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-outline:hover { color: var(--text); border-color: var(--accent); }
+  .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.8rem; border-radius: 6px; }
+  .btn-icon { width: 32px; height: 32px; padding: 0; justify-content: center; border-radius: 6px; font-size: 1.1rem; }
+
+  .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+  .group-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.2rem;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0.75rem;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .group-card:hover { transform: translateY(-2px); box-shadow: 0 4px 24px rgba(124,110,240,0.15); }
+  .group-color-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    display: inline-block; margin-right: 6px;
+  }
+  .group-name-row { display: flex; align-items: center; font-weight: 700; font-size: 1rem; }
+  .group-name-input {
+    background: transparent; border: none; outline: none;
+    color: var(--text); font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700; font-size: 1rem; width: 90px; text-align: center;
+  }
+  .score-display {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.8rem; font-weight: 700;
+    line-height: 1;
+  }
+  .score-controls { display: flex; gap: 0.4rem; }
+  .score-btn {
+    width: 36px; height: 36px; border-radius: 8px; border: none; cursor: pointer;
+    font-size: 1.3rem; font-weight: 700;
+    transition: all 0.12s; display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .score-plus { background: rgba(77,201,168,0.2); color: var(--accent3); }
+  .score-plus:hover { background: rgba(77,201,168,0.35); transform: scale(1.1); }
+  .score-minus { background: rgba(240,80,80,0.15); color: #f05050; }
+  .score-minus:hover { background: rgba(240,80,80,0.25); transform: scale(1.1); }
+  .score-reset-btn { background: rgba(255,255,255,0.05); color: var(--muted); font-size: 0.7rem; }
+  .score-reset-btn:hover { background: rgba(255,255,255,0.1); }
+  .crown { font-size: 1.4rem; }
+  .add-group-area { margin-top: 1.5rem; display: flex; gap: 0.75rem; align-items: center; }
+  .add-group-input {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.5rem 0.9rem; color: var(--text); font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.9rem; outline: none; flex: 1; max-width: 200px;
+  }
+  .add-group-input:focus { border-color: var(--accent); }
+  .podium-bar {
+    height: 6px; border-radius: 3px;
+    width: 100%; background: rgba(255,255,255,0.07);
+    margin-top: 0.5rem; overflow: hidden;
+  }
+  .podium-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+
+  /* ====== 2. COUNTDOWN ====== */
+  .countdown-wrap { display: flex; flex-direction: column; align-items: center; padding: 2rem 0; gap: 2rem; }
+  .clock-face {
+    position: relative; width: 260px; height: 260px;
+    background: var(--bg3); border-radius: 50%;
+    border: 3px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 0 60px rgba(124,110,240,0.15);
+  }
+  .clock-svg { position: absolute; top: 0; left: 0; }
+  .clock-time {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 3.2rem; font-weight: 700; z-index: 1;
+    letter-spacing: -2px;
+  }
+  .clock-label { font-size: 0.8rem; color: var(--muted); z-index: 1; margin-top: 4px; }
+  .countdown-inputs { display: flex; gap: 1rem; align-items: center; }
+  .time-input-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .time-input-label { font-size: 0.75rem; color: var(--muted); }
+  .time-number-input {
+    width: 70px; text-align: center;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem; font-weight: 700; padding: 0.4rem;
+    outline: none;
+  }
+  .time-number-input:focus { border-color: var(--accent); }
+  .time-sep { font-size: 1.8rem; font-weight: 700; color: var(--muted); padding-bottom: 10px; }
+  .countdown-controls { display: flex; gap: 0.75rem; }
+  .ctrl-btn {
+    width: 54px; height: 54px; border-radius: 50%; border: none; cursor: pointer;
+    font-size: 1.3rem; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .ctrl-play { background: var(--accent); color: #fff; font-size: 1.5rem; }
+  .ctrl-play:hover { background: #6c5ee0; transform: scale(1.05); }
+  .ctrl-reset-c { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
+  .ctrl-reset-c:hover { color: var(--text); }
+  .alarm-ring { animation: ring 0.12s linear infinite; }
+  @keyframes ring { 0%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} 100%{transform:rotate(-3deg)} }
+  .presets { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+  .preset-btn {
+    padding: 0.4rem 0.9rem; border-radius: 20px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); cursor: pointer; font-size: 0.82rem;
+    font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s;
+  }
+  .preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ====== 3. BUBBLE NOISE ====== */
+  .bubble-stage {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 120px);
+    background: radial-gradient(ellipse at 50% 60%, #1a0a2e 0%, #0a0a1a 70%);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .bubble-ui {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 1rem; align-items: center; z-index: 20;
+  }
+  .mic-btn {
+    padding: 0.55rem 1.3rem; border-radius: 24px; border: none; cursor: pointer;
+    background: var(--accent); color: #fff;
+    font-family: 'Noto Sans TC', sans-serif; font-weight: 700; font-size: 0.9rem;
+    display: flex; align-items: center; gap: 6px;
+    transition: all 0.15s;
+    box-shadow: 0 4px 16px rgba(124,110,240,0.4);
+  }
+  .mic-btn:hover { background: #6c5ee0; }
+  .mic-btn.active { background: #e06aaa; box-shadow: 0 4px 16px rgba(224,106,170,0.5); }
+  .vol-meter {
+    width: 90px; height: 8px; background: rgba(255,255,255,0.1);
+    border-radius: 4px; overflow: hidden;
+  }
+  .vol-fill { height: 100%; border-radius: 4px; transition: width 0.05s; }
+  .bubble { position: absolute; border-radius: 50%; pointer-events: none; }
+  .noise-label {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    font-size: 0.82rem; color: rgba(255,255,255,0.25); z-index: 5; text-align: center;
+  }
+  .burst-particle {
+    position: absolute; border-radius: 50%;
+    pointer-events: none; z-index: 15;
+  }
+
+  /* ====== 4. RANDOM GROUP ====== */
+  .rg-layout { display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.5rem; }
+  @media(max-width: 600px){ .rg-layout { grid-template-columns: 1fr; } }
+  .rg-panel {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem;
+  }
+  .rg-panel h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--accent); }
+  .student-textarea {
+    width: 100%; min-height: 220px; resize: vertical;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-family: 'Noto Sans TC', sans-serif; font-size: 0.88rem;
+    padding: 0.75rem; outline: none; line-height: 1.8;
+  }
+  .student-textarea:focus { border-color: var(--accent); }
+  .rg-settings { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; margin-top: 1rem; }
+  .setting-group { display: flex; flex-direction: column; gap: 4px; }
+  .setting-label { font-size: 0.75rem; color: var(--muted); }
+  .setting-input {
+    width: 80px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 1rem;
+    padding: 0.4rem 0.6rem; text-align: center; outline: none;
+  }
+  .setting-input:focus { border-color: var(--accent); }
+  .result-groups { display: flex; flex-direction: column; gap: 0.75rem; }
+  .result-group-card {
+    background: var(--card); border-radius: 12px; padding: 0.9rem 1rem;
+    border: 1px solid var(--border);
+    animation: slideIn 0.35s ease both;
+  }
+  @keyframes slideIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+  .result-group-title { font-size: 0.8rem; font-weight: 700; color: var(--accent); margin-bottom: 0.5rem; }
+  .result-names { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .name-tag {
+    background: rgba(124,110,240,0.15); border: 1px solid rgba(124,110,240,0.3);
+    color: var(--text); border-radius: 20px; padding: 0.2rem 0.7rem;
+    font-size: 0.85rem;
+  }
+  .shuffle-animation .name-tag { animation: pop 0.3s ease; }
+  @keyframes pop { 0%{transform:scale(0)} 70%{transform:scale(1.12)} 100%{transform:scale(1)} }
+  .rg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    background: var(--card); border: 1px solid var(--border);
+    padding: 0.6rem 1.4rem; border-radius: 24px;
+    font-size: 0.88rem; color: var(--text);
+    opacity: 0; transition: opacity 0.3s; z-index: 999;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-title">🎒 班級工具</div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" data-tab="score"><span class="tab-icon">🏆</span> 小組積分</div>
+    <div class="nav-tab" data-tab="countdown"><span class="tab-icon">⏱</span> 倒數計時</div>
+    <div class="nav-tab" data-tab="bubble"><span class="tab-icon">🫧</span> 噪音泡泡</div>
+    <div class="nav-tab" data-tab="randgroup"><span class="tab-icon">🎲</span> 隨機分組</div>
+  </div>
+</nav>
+
+<!-- ====== SCORE ====== -->
+<section class="section active" id="sec-score">
+  <div class="score-header">
+    <h2>🏆 小組積分版</h2>
+    <div style="display:flex;gap:0.5rem;">
+      <button class="btn btn-outline" onclick="resetAllScores()">🔄 全部歸零</button>
+      <button class="btn btn-primary" id="addGroupBtn" onclick="openAddGroup()">＋ 新增小組</button>
+    </div>
+  </div>
+  <div class="groups-grid" id="groupsGrid"></div>
+  <div class="add-group-area" id="addGroupArea" style="display:none">
+    <input class="add-group-input" id="newGroupName" placeholder="小組名稱" maxlength="8">
+    <button class="btn btn-primary" onclick="addGroup()">新增</button>
+    <button class="btn btn-outline" onclick="closeAddGroup()">取消</button>
+  </div>
+</section>
+
+<!-- ====== COUNTDOWN ====== -->
+<section class="section" id="sec-countdown">
+  <div class="countdown-wrap">
+    <div class="clock-face" id="clockFace">
+      <svg class="clock-svg" width="260" height="260" id="clockSvg">
+        <circle cx="130" cy="130" r="120" fill="none" stroke="rgba(124,110,240,0.12)" stroke-width="10"/>
+        <circle cx="130" cy="130" r="120" fill="none" stroke="url(#cg)" stroke-width="10"
+          stroke-linecap="round" stroke-dasharray="753.98"
+          stroke-dashoffset="753.98" id="clockArc" transform="rotate(-90 130 130)"/>
+        <defs>
+          <linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#7c6ef0"/>
+            <stop offset="100%" stop-color="#e06aaa"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="clock-time" id="clockDisplay">05:00</div>
+      <div class="clock-label" id="clockLabel">準備開始</div>
+    </div>
+    <div class="presets">
+      <button class="preset-btn" onclick="setPreset(1,0)">1 分鐘</button>
+      <button class="preset-btn" onclick="setPreset(2,0)">2 分鐘</button>
+      <button class="preset-btn" onclick="setPreset(3,0)">3 分鐘</button>
+      <button class="preset-btn" onclick="setPreset(5,0)">5 分鐘</button>
+      <button class="preset-btn" onclick="setPreset(10,0)">10 分鐘</button>
+      <button class="preset-btn" onclick="setPreset(0,30)">30 秒</button>
+    </div>
+    <div class="countdown-inputs">
+      <div class="time-input-group">
+        <span class="time-input-label">分</span>
+        <input class="time-number-input" id="minInput" type="number" min="0" max="99" value="5" onchange="syncClock()">
+      </div>
+      <div class="time-sep">:</div>
+      <div class="time-input-group">
+        <span class="time-input-label">秒</span>
+        <input class="time-number-input" id="secInput" type="number" min="0" max="59" value="0" onchange="syncClock()">
+      </div>
+    </div>
+    <div class="countdown-controls">
+      <button class="ctrl-btn ctrl-reset-c" onclick="resetCountdown()" title="重設">↺</button>
+      <button class="ctrl-btn ctrl-play" id="playBtn" onclick="toggleCountdown()">▶</button>
+    </div>
+  </div>
+</section>
+
+<!-- ====== BUBBLE ====== -->
+<section class="section" id="sec-bubble">
+  <div class="bubble-stage" id="bubbleStage">
+    <div class="bubble-ui">
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤 開啟麥克風</button>
+      <div class="vol-meter"><div class="vol-fill" id="volFill" style="width:0%;background:var(--accent)"></div></div>
+    </div>
+    <div class="noise-label" id="noiseLabel">開啟麥克風後，聲音越大泡泡越多越大～</div>
+  </div>
+</section>
+
+<!-- ====== RANDOM GROUP ====== -->
+<section class="section" id="sec-randgroup">
+  <div class="rg-header">
+    <h2>🎲 隨機分組</h2>
+  </div>
+  <div class="rg-layout">
+    <div class="rg-panel">
+      <h3>學生名單</h3>
+      <textarea class="student-textarea" id="studentList" placeholder="每行輸入一個學生名字，例如：&#10;小明&#10;小華&#10;小美&#10;阿強&#10;阿花"></textarea>
+      <div class="rg-settings">
+        <div class="setting-group">
+          <span class="setting-label">每組人數</span>
+          <input class="setting-input" id="groupSize" type="number" min="2" max="20" value="4">
+        </div>
+        <button class="btn btn-primary" onclick="doShuffle()" style="align-self:flex-end">🎲 開始抽籤！</button>
+        <button class="btn btn-outline" onclick="clearResult()" style="align-self:flex-end">清除</button>
+      </div>
+    </div>
+    <div class="rg-panel">
+      <h3>分組結果</h3>
+      <div class="result-groups" id="resultGroups">
+        <div style="color:var(--muted);font-size:0.88rem;text-align:center;padding:2rem 0">
+          輸入名單並按「開始抽籤！」
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ======== TABS ========
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('sec-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ======== TOAST ========
+function showToast(msg, duration=2000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ======== SCORE BOARD ========
+const GROUP_COLORS = ['#7c6ef0','#e06aaa','#4dc9a8','#f0a33c','#e05050','#5aabf0','#a8d150','#f06090'];
+let groups = [
+  { name: '第一組', score: 0, color: GROUP_COLORS[0] },
+  { name: '第二組', score: 0, color: GROUP_COLORS[1] },
+  { name: '第三組', score: 0, color: GROUP_COLORS[2] },
+  { name: '第四組', score: 0, color: GROUP_COLORS[3] },
+];
+
+function renderGroups() {
+  const grid = document.getElementById('groupsGrid');
+  const maxScore = Math.max(...groups.map(g => g.score), 1);
+  grid.innerHTML = '';
+  const sorted = [...groups].map((g,i)=>({...g,idx:i})).sort((a,b)=>b.score-a.score);
+  const topScore = sorted[0]?.score;
+  groups.forEach((g, i) => {
+    const isTop = g.score === topScore && topScore > 0;
+    const fillPct = maxScore > 0 ? Math.max(0, (g.score / maxScore)) * 100 : 0;
+    const card = document.createElement('div');
+    card.className = 'group-card';
+    card.innerHTML = `
+      <div class="group-name-row">
+        <span class="group-color-dot" style="background:${g.color}"></span>
+        <input class="group-name-input" value="${g.name}" onchange="renameGroup(${i}, this.value)" maxlength="8">
+        ${isTop ? '<span class="crown">👑</span>' : ''}
+      </div>
+      <div class="score-display" style="color:${g.color}">${g.score}</div>
+      <div class="score-controls">
+        <button class="score-btn score-minus" onclick="changeScore(${i},-1)">−</button>
+        <button class="score-btn score-plus" onclick="changeScore(${i},+1)">＋</button>
+        <button class="score-btn score-reset-btn btn-sm" onclick="resetScore(${i})" title="歸零">↺</button>
+      </div>
+      <div class="podium-bar"><div class="podium-fill" style="width:${fillPct}%;background:${g.color}"></div></div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function changeScore(idx, delta) {
+  groups[idx].score = Math.max(0, groups[idx].score + delta);
+  renderGroups();
+}
+function resetScore(idx) { groups[idx].score = 0; renderGroups(); }
+function resetAllScores() { groups.forEach(g => g.score = 0); renderGroups(); showToast('✅ 所有分數已歸零'); }
+function renameGroup(idx, name) { groups[idx].name = name || '小組'; }
+function openAddGroup() {
+  document.getElementById('addGroupArea').style.display = 'flex';
+  document.getElementById('newGroupName').focus();
+}
+function closeAddGroup() { document.getElementById('addGroupArea').style.display = 'none'; }
+function addGroup() {
+  const name = document.getElementById('newGroupName').value.trim() || `第${groups.length+1}組`;
+  groups.push({ name, score: 0, color: GROUP_COLORS[groups.length % GROUP_COLORS.length] });
+  document.getElementById('newGroupName').value = '';
+  closeAddGroup(); renderGroups();
+}
+renderGroups();
+
+// ======== COUNTDOWN ========
+let countdownInterval = null;
+let totalSecs = 300;
+let remSecs = 300;
+let running = false;
+
+function syncClock() {
+  const m = parseInt(document.getElementById('minInput').value) || 0;
+  const s = parseInt(document.getElementById('secInput').value) || 0;
+  totalSecs = m * 60 + s;
+  remSecs = totalSecs;
+  updateClockUI();
+}
+
+function setPreset(m, s) {
+  document.getElementById('minInput').value = m;
+  document.getElementById('secInput').value = s;
+  syncClock(); if(running) { stopCountdown(); }
+  document.getElementById('playBtn').textContent = '▶';
+  document.getElementById('clockLabel').textContent = '準備開始';
+  document.getElementById('clockFace').classList.remove('alarm-ring');
+}
+
+function updateClockUI() {
+  const m = Math.floor(remSecs / 60);
+  const s = remSecs % 60;
+  document.getElementById('clockDisplay').textContent =
+    String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  const ratio = totalSecs > 0 ? remSecs / totalSecs : 0;
+  const circ = 2 * Math.PI * 120;
+  document.getElementById('clockArc').setAttribute('stroke-dashoffset', circ * (1 - ratio));
+  const pct = ratio;
+  let color = 'var(--accent)';
+  if (pct < 0.33) color = '#f05050';
+  else if (pct < 0.6) color = 'var(--accent4)';
+  document.getElementById('volFill').style.background = color;
+}
+
+function toggleCountdown() {
+  if (running) { stopCountdown(); }
+  else { startCountdown(); }
+}
+
+function startCountdown() {
+  if (remSecs <= 0) { remSecs = totalSecs; }
+  running = true;
+  document.getElementById('playBtn').textContent = '⏸';
+  document.getElementById('clockLabel').textContent = '計時中...';
+  document.getElementById('clockFace').classList.remove('alarm-ring');
+  countdownInterval = setInterval(() => {
+    remSecs--;
+    updateClockUI();
+    if (remSecs <= 0) {
+      stopCountdown();
+      document.getElementById('clockLabel').textContent = '時間到！';
+      document.getElementById('clockFace').classList.add('alarm-ring');
+      document.getElementById('playBtn').textContent = '▶';
+      setTimeout(() => document.getElementById('clockFace').classList.remove('alarm-ring'), 3000);
+    }
+  }, 1000);
+}
+function stopCountdown() {
+  running = false;
+  clearInterval(countdownInterval);
+  document.getElementById('playBtn').textContent = '▶';
+  if (remSecs > 0) document.getElementById('clockLabel').textContent = '已暫停';
+}
+function resetCountdown() {
+  stopCountdown();
+  remSecs = totalSecs;
+  updateClockUI();
+  document.getElementById('clockLabel').textContent = '準備開始';
+  document.getElementById('clockFace').classList.remove('alarm-ring');
+}
+updateClockUI();
+
+// ======== BUBBLE NOISE ========
+let audioCtx = null, analyser = null, micStream = null;
+let micActive = false;
+let bubbles = [];
+let animFrame = null;
+let volHistory = [];
+
+function toggleMic() {
+  if (!micActive) startMic(); else stopMic();
+}
+
+async function startMic() {
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(micStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    micActive = true;
+    document.getElementById('micBtn').textContent = '🎤 關閉麥克風';
+    document.getElementById('micBtn').classList.add('active');
+    document.getElementById('noiseLabel').textContent = '偵測中 — 開始說話吧！';
+    spawnInitialBubbles();
+    animateBubbles();
+  } catch(e) {
+    showToast('⚠️ 無法取得麥克風權限，請允許後再試', 3000);
+  }
+}
+
+function stopMic() {
+  micActive = false;
+  if (micStream) micStream.getTracks().forEach(t => t.stop());
+  if (audioCtx) audioCtx.close();
+  analyser = null;
+  cancelAnimationFrame(animFrame);
+  bubbles = [];
+  document.getElementById('bubbleStage').querySelectorAll('.bubble').forEach(b => b.remove());
+  document.getElementById('micBtn').textContent = '🎤 開啟麥克風';
+  document.getElementById('micBtn').classList.remove('active');
+  document.getElementById('noiseLabel').textContent = '開啟麥克風後，聲音越大泡泡越多越大～';
+  document.getElementById('volFill').style.width = '0%';
+}
+
+function getVolume() {
+  if (!analyser) return 0;
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(data);
+  const avg = data.reduce((a,b) => a+b, 0) / data.length;
+  return avg / 128; // 0..2
+}
+
+const BUBBLE_COLORS = [
+  'rgba(124,110,240,', 'rgba(224,106,170,', 'rgba(77,201,168,',
+  'rgba(240,163,60,', 'rgba(90,171,240,', 'rgba(168,209,80,'
+];
+
+function makeBubble(vol, stage) {
+  const r = 20 + vol * 60 + Math.random() * 30;
+  const x = Math.random() * (stage.clientWidth - r*2);
+  const y = stage.clientHeight + r;
+  const colorBase = BUBBLE_COLORS[Math.floor(Math.random()*BUBBLE_COLORS.length)];
+  const alpha = 0.25 + Math.random() * 0.45;
+  const el = document.createElement('div');
+  el.className = 'bubble';
+  el.style.cssText = `
+    width:${r*2}px;height:${r*2}px;left:${x}px;top:${y}px;
+    background:radial-gradient(circle at 35% 35%, ${colorBase}${alpha*1.4}), ${colorBase}0.05));
+    border:1.5px solid ${colorBase}${alpha + 0.25});
+    box-shadow: inset 0 -4px 10px rgba(255,255,255,0.08), 0 0 ${r*0.5}px ${colorBase}0.3);
+  `;
+  stage.appendChild(el);
+  return {
+    el, x, y: stage.clientHeight + r,
+    r, vx: (Math.random()-0.5)*1.5,
+    vy: -(1.2 + Math.random()*2 + vol*1.5),
+    life: 1, decay: 0.003 + Math.random()*0.006,
+    wobble: Math.random()*Math.PI*2,
+    wobbleSpeed: 0.03 + Math.random()*0.03,
+    alive: true, shaking: false, shakeT: 0
+  };
+}
+
+function spawnInitialBubbles() {
+  const stage = document.getElementById('bubbleStage');
+  for(let i=0;i<8;i++){
+    const b = makeBubble(0.2, stage);
+    b.y = Math.random() * stage.clientHeight * 0.8;
+    b.el.style.top = b.y + 'px';
+    bubbles.push(b);
+  }
+}
+
+function burstBubble(bubble, stage) {
+  bubble.alive = false;
+  bubble.el.remove();
+  const cx = bubble.x + bubble.r;
+  const cy = bubble.y + bubble.r;
+  const n = 8 + Math.floor(bubble.r / 10);
+  for(let i=0;i<n;i++){
+    const p = document.createElement('div');
+    p.className = 'burst-particle';
+    const pr = 2 + Math.random()*4;
+    const angle = (i/n)*Math.PI*2;
+    const speed = (bubble.r*0.08 + Math.random()*2);
+    p.style.cssText = `width:${pr*2}px;height:${pr*2}px;left:${cx-pr}px;top:${cy-pr}px;
+      background:${BUBBLE_COLORS[Math.floor(Math.random()*BUBBLE_COLORS.length)]}0.8);`;
+    stage.appendChild(p);
+    let px = cx, py = cy;
+    let life = 1;
+    const vx = Math.cos(angle)*speed, vy = Math.sin(angle)*speed;
+    const tick = () => {
+      life -= 0.07;
+      px += vx; py += vy + 0.5;
+      p.style.left = (px-pr)+'px'; p.style.top = (py-pr)+'px';
+      p.style.opacity = life;
+      if(life > 0) requestAnimationFrame(tick); else p.remove();
+    };
+    requestAnimationFrame(tick);
+  }
+}
+
+function animateBubbles() {
+  const stage = document.getElementById('bubbleStage');
+  const vol = getVolume();
+  volHistory.push(vol);
+  if(volHistory.length > 10) volHistory.shift();
+  const smoothVol = volHistory.reduce((a,b)=>a+b,0)/volHistory.length;
+
+  // Vol meter
+  document.getElementById('volFill').style.width = Math.min(100, smoothVol * 80) + '%';
+  const fillColor = smoothVol > 1 ? '#f05050' : smoothVol > 0.5 ? 'var(--accent4)' : 'var(--accent)';
+  document.getElementById('volFill').style.background = fillColor;
+
+  // Spawn new bubbles based on volume
+  const spawnRate = smoothVol * 0.6;
+  if(Math.random() < spawnRate && bubbles.filter(b=>b.alive).length < 80) {
+    bubbles.push(makeBubble(smoothVol, stage));
+  }
+  // Extra bubbles on loud noise
+  if(smoothVol > 1.1) {
+    for(let i=0;i<3;i++) bubbles.push(makeBubble(smoothVol, stage));
+  }
+
+  // Update bubbles
+  bubbles = bubbles.filter(b => {
+    if(!b.alive) return false;
+    b.wobble += b.wobbleSpeed;
+    b.x += b.vx + Math.sin(b.wobble)*0.8;
+    b.y += b.vy;
+
+    // Shake on high volume
+    if(smoothVol > 0.8) {
+      const shake = (smoothVol - 0.8) * 8;
+      b.x += (Math.random()-0.5)*shake;
+      b.y += (Math.random()-0.5)*shake*0.5;
+    }
+
+    b.life -= b.decay;
+
+    // Burst if very loud or off screen or life gone
+    const offScreen = b.y + b.r*2 < -20 || b.x < -b.r*3 || b.x > stage.clientWidth + b.r;
+    const burstByVol = smoothVol > 1.4 && Math.random() < 0.08;
+
+    if(b.life <= 0 || offScreen || burstByVol) {
+      if(!offScreen) burstBubble(b, stage);
+      else { b.el.remove(); }
+      return false;
+    }
+
+    b.el.style.left = b.x + 'px';
+    b.el.style.top = b.y + 'px';
+    b.el.style.opacity = b.life;
+
+    // Scale pulse on loud
+    if(smoothVol > 0.6) {
+      const scale = 1 + (smoothVol-0.6)*0.15*Math.sin(Date.now()/80);
+      b.el.style.transform = `scale(${scale})`;
+    }
+    return true;
+  });
+
+  // Ambient: slowly spawn a few if quiet
+  if(smoothVol < 0.1 && Math.random() < 0.05 && bubbles.filter(b=>b.alive).length < 15) {
+    bubbles.push(makeBubble(0.05, stage));
+  }
+
+  animFrame = requestAnimationFrame(animateBubbles);
+}
+
+// ======== RANDOM GROUP ========
+function doShuffle() {
+  const raw = document.getElementById('studentList').value;
+  const names = raw.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(names.length < 2) { showToast('請至少輸入 2 個學生名字'); return; }
+  const gs = parseInt(document.getElementById('groupSize').value) || 4;
+  const shuffled = [...names].sort(()=>Math.random()-0.5);
+  const result = [];
+  for(let i=0;i<shuffled.length;i+=gs) result.push(shuffled.slice(i,i+gs));
+  renderResult(result);
+}
+
+function renderResult(groups) {
+  const container = document.getElementById('resultGroups');
+  const colors = ['#7c6ef0','#e06aaa','#4dc9a8','#f0a33c','#5aabf0','#a8d150','#f06090','#50c8f0'];
+  container.innerHTML = '';
+  groups.forEach((g, i) => {
+    const card = document.createElement('div');
+    card.className = 'result-group-card shuffle-animation';
+    card.style.animationDelay = (i*0.06)+'s';
+    card.style.borderLeftColor = colors[i%colors.length];
+    card.style.borderLeftWidth = '3px';
+    card.innerHTML = `
+      <div class="result-group-title" style="color:${colors[i%colors.length]}">第 ${i+1} 組（${g.length}人）</div>
+      <div class="result-names">${g.map(n=>`<span class="name-tag">${n}</span>`).join('')}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function clearResult() {
+  document.getElementById('resultGroups').innerHTML = `<div style="color:var(--muted);font-size:0.88rem;text-align:center;padding:2rem 0">輸入名單並按「開始抽籤！」</div>`;
+}
+</script>
+</body>
+</html>
