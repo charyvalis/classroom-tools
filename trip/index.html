@@ -116,6 +116,14 @@ nav.tabs button.em-t{color:var(--red)}
 .sheet h3{font-size:20px;margin-bottom:14px}
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;z-index:10;opacity:0;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;transition:opacity .25s;pointer-events:none}
 .toast.on{opacity:1}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}
+.cal .w{font-size:12px;color:var(--mute);padding:4px 0}
+.cal button,.cal span.e{min-height:46px;border-radius:12px;border:0;background:none;font-size:15px;display:grid;place-items:center;line-height:1.1;padding:2px}
+.cal button.tr{background:var(--olive2);color:var(--ink);font-weight:700}
+.cal button.tr small{font-size:10px;font-weight:500;color:var(--olive)}
+.cal button.sel{background:var(--olive);color:light-dark(#fff,#18200f)}.cal button.sel small{color:inherit}
+.cal button.today{outline:2px solid var(--sand)}
+.calm{font-family:"Noto Serif TC",serif;font-weight:700;font-size:17px;margin:12px 0 6px}
 .g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -127,9 +135,7 @@ nav.tabs button.em-t{color:var(--red)}
     <h1 id="ttl">我的旅行</h1>
     <button class="btn sm pri" id="inst" hidden>安裝成 App</button>
     <span class="dot" id="sync" title="同步狀態"></span>
-    <button class="ibtn" id="setBtn" aria-label="設定">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
-    </button>
+    <button class="btn sm" id="setBtn">設定</button>
   </header>
   <main id="app"></main>
 </div>
@@ -239,7 +245,7 @@ function nowBlock(){const t=T(),n=localNow();let di=n.di,m=n.min,label="";
   ${w.i<0?`<p>今天的行程 ${fm(s[0].eff)} 開始：${esc(s[0].n)}</p>`:`<div class="now">${avatarSVG(56)}<div><div class="row"><span class="t">${fm(cur.eff)}</span><b>${esc(cur.n)}</b></div>
   ${w.move>0?`<div class="small">正在前往下一站（約 ${Math.round(w.move*100)}%）</div>`:cur.dep!=null?`<div class="small">預計 ${fm(cur.dep)} 出發</div>`:'<div class="small">今天最後一站</div>'}${left}</div></div>`}
   ${nx?`<div class="row" style="margin-top:12px"><span class="small">下一站</span><b>${fm(nx.eff)} ${esc(nx.n)}</b>${nx.fixed?'<span class="pill">固定班次</span>':""}<span class="sp"></span><a class="btn sm pri" style="display:inline-flex;align-items:center;text-decoration:none" href="${navUrl(nx)}" target="_blank" rel="noopener">導航</a></div>`:""}
-  <div class="acts" style="margin-top:12px"><button class="btn sm" data-a="tab" data-v="plan">看全部行程</button><button class="btn sm" data-a="tab" data-v="map">看地圖</button></div></div>`}
+  <div class="acts" style="margin-top:12px"><button class="btn sm pri" data-a="tab" data-v="plan">日曆・編輯行程</button><button class="btn sm" data-a="tab" data-v="map">看地圖</button></div></div>`}
 function navUrl(x){const t=T();return"https://www.google.com/maps/dir/?api=1&destination="+(x.lat!=null&&x.lat!==""?`${x.lat},${x.lng}`:encodeURIComponent(x.n+" "+(t.cities[0]?.[0]||"")))+"&travelmode=transit"}
 function home(){const t=T(),c=CO();const done=t.todo.filter(x=>x.d).length;
   const wx=t.cities.map((ct,i)=>{const w=wxCache[ct[0]];return`<div class="wx"><b>${esc(ct[0])}</b>${w&&!w.err?wxIcon(w.code):'<span></span>'}<div>${w&&!w.err?`<b>${wxName(w.code)}　現在 ${Math.round(w.now)}°</b><div class="small">今天 ${Math.round(w.lo)}° / ${Math.round(w.hi)}°</div>`:w&&w.err?`<span class="small">暫時抓不到天氣</span> <a class="small" href="https://www.google.com/search?q=${encodeURIComponent(ct[0]+" 天氣")}" target="_blank" rel="noopener">查天氣</a>`:'<span class="small">讀取中…</span>'}</div></div>`}).join("");
@@ -258,12 +264,25 @@ function home(){const t=T(),c=CO();const done=t.todo.filter(x=>x.d).length;
   <button class="btn sm" data-a="tab" data-v="lists" style="margin-top:6px">看全部清單</button></div>`}
 function quick(c){const r=+T().rate||1;const base=[300,1000,3000,10000].map(tw=>tw/r);return base.map(v=>{const p=Math.pow(10,Math.max(0,Math.floor(Math.log10(v))));return Math.round(v/p)*p})}
 
+/* ---------- 日曆 ---------- */
+function calCard(){const t=T(),n=localNow();const[y,m,d]=t.start.split("-").map(Number);const s0=Date.UTC(y,m-1,d),N=t.days.length;
+  const months=[];for(let i=0;i<N;i++){const x=new Date(s0+i*864e5);const k=x.getUTCFullYear()*12+x.getUTCMonth();if(!months.includes(k))months.push(k)}
+  const tw=new Date(Date.now()+8*36e5).toISOString().slice(0,10);
+  const grid=months.map(k=>{const Y=Math.floor(k/12),M=k%12;const first=new Date(Date.UTC(Y,M,1)).getUTCDay(),dim=new Date(Date.UTC(Y,M+1,0)).getUTCDate();let c="";
+    for(let i=0;i<first;i++)c+='<span class="e"></span>';
+    for(let dd=1;dd<=dim;dd++){const di=Math.round((Date.UTC(Y,M,dd)-s0)/864e5);const iso=`${Y}-${String(M+1).padStart(2,"0")}-${String(dd).padStart(2,"0")}`;const inT=di>=0&&di<N;
+      c+=inT?`<button class="tr ${di===selDay?"sel":""} ${iso===tw?"today":""}" data-a="day" data-v="${di}">${dd}<small>Day ${di+1}</small></button>`:`<button class="${iso===tw?"today":""}" data-a="pickStart" data-v="${iso}" aria-label="${M+1}月${dd}日">${dd}</button>`}
+    return`<div class="calm">${Y} 年 ${M+1} 月</div><div class="cal">${"日一二三四五六".split("").map(w=>`<span class="w">${w}</span>`).join("")}${c}</div>`}).join("");
+  return`<div class="card"><h2>${ico("cal")}旅行日曆</h2>
+  <div class="g2"><label class="f"><span>出發日（第一天）</span><input type="date" id="calStart" value="${esc(t.start)}"></label><label class="f"><span>一共幾天</span><select id="calDays">${Array.from({length:30},(_,i)=>`<option ${i+1===N?"selected":""}>${i+1}</option>`).join("")}</select></label></div>
+  ${grid}<p class="small" style="margin:8px 0 0">點綠色的日子看那天行程；改出發日，整趟行程會一起搬過去。</p></div>`}
 /* ---------- 頁面：行程 ---------- */
 function plan(){const t=T(),n=localNow();if(selDay==null)selDay=Math.min(Math.max(n.di,0),t.days.length-1);
   const day=t.days[selDay];const s=day?calc(day):[];const live=n.di===selDay;const w=live?where(s,n.min):{i:-2};
   const shifted=day&&day.stops.some(x=>x.delay);
-  return`<div class="days">${t.days.map((d,i)=>`<button class="chip ${i===selDay?"on":""}" data-a="day" data-v="${i}">Day ${i+1}・${dayDate(i)}</button>`).join("")}<button class="chip" data-a="addDay">＋ 加一天</button></div>
-  ${day?`<div class="card"><h2>${esc(day.title||"Day "+(selDay+1))}<span class="sp"></span><button class="btn sm" data-a="editDay">改名</button></h2>
+  return calCard()+`<div class="days">${t.days.map((d,i)=>`<button class="chip ${i===selDay?"on":""}" data-a="day" data-v="${i}">Day ${i+1}・${dayDate(i)}</button>`).join("")}<button class="chip" data-a="addDay">＋ 加一天</button></div>
+  ${day?`<div class="card"><h2>Day ${selDay+1}・${esc(day.title||"")}<span class="sp"></span><button class="btn sm" data-a="editDay">改標題</button></h2>
+  <div class="row" style="margin:-4px 0 14px"><span class="small">${dayDate(selDay)}</span><span class="sp"></span><button class="btn sm pri" data-a="editStop" data-id="">＋ 新增一站</button></div>
   ${shifted?`<div class="row" style="margin:-4px 0 12px"><span class="small">有行程往後延了，固定班次不會跟著動。</span><button class="btn sm" data-a="undoDelay">回到原訂時間</button></div>`:""}
   ${s.map((x,i)=>`<div class="stop ${live&&i<w.i?"past":""} ${live&&i===w.i?"cur":""} ${x.fixed?"fixed":""}">
    <div class="tm">${fm(x.eff)}${x.delay&&!x.fixed?`<s>原 ${esc(x.t)}</s>`:""}</div><div class="rail"><span class="nd"></span></div>
@@ -394,6 +413,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
   if(a==="tick")return;
   if(a==="tab")return go(v);
   if(a==="day"){selDay=+v;preview=null;return render()}
+  if(a==="pickStart"){toast("想改出發日，請用上面的「出發日」");return}
   if(a==="addDay"){t.days.push({title:"Day "+(t.days.length+1),stops:[],diary:""});selDay=t.days.length-1;save();return render()}
   if(a==="editDay"){open(`<h3>這天的標題</h3><input id="dT" value="${esc(t.days[selDay].title)}"><button class="btn pri" data-a="saveDay" style="width:100%;margin-top:10px">儲存</button>${t.days.length>1?`<button class="btn" data-a="delDay" style="width:100%;margin-top:10px;color:var(--red)">刪除這一天</button>`:""}`);return}
   if(a==="saveDay"){t.days[selDay].title=$("#dT").value.trim();save();close();return render()}
@@ -431,6 +451,8 @@ $("#setBtn").addEventListener("click",settings);
 $("#mask").addEventListener("click",e=>{if(e.target.id==="mask")close()});
 document.addEventListener("change",e=>{const el=e.target,t=T();
   if(el.dataset.a==="tick"){const x=t[el.dataset.l].find(z=>z.id===el.dataset.id);if(x){x.d=el.checked;save();setTimeout(render,250)}}
+  if(el.id==="calStart"&&el.value){t.start=el.value;save();render();return}
+  if(el.id==="calDays"){const n=+el.value;if(n>t.days.length){while(t.days.length<n)t.days.push({title:"",stops:[],diary:""})}else if(n<t.days.length){const extra=t.days.slice(n);if(extra.some(d=>d.stops.length||d.diary)&&el.dataset.sure!=="1"){el.dataset.sure="1";el.value=t.days.length;toast("後面幾天還有行程，再選一次才會刪掉");return}t.days.length=n;if(selDay>=n)selDay=n-1}save();render();return}
   if(el.id==="rateAuto"){t.rateAuto=el.checked;save();if(el.checked)loadRate(true)}
   if(el.id==="taxOn"){t.taxOn=el.checked;save();conv(1)}
   if(el.id==="sTrip"){S.cur=el.value;selDay=null;wxCache={};save();close();render();loadWx();loadRate()}
